@@ -1,6 +1,7 @@
 import {
-  //  GithubAuthProvider,
+  GithubAuthProvider,
   GoogleAuthProvider,
+  signInWithEmailAndPassword,
   getAuth,
   signInWithPopup,
   signOut,
@@ -10,10 +11,12 @@ import { useState } from "react";
 
 const Login = () => {
   const [user, setUser] = useState();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   const auth = getAuth(app);
   const googleProvider = new GoogleAuthProvider();
-  // const githubProvider = new GithubAuthProvider();
+  const githubProvider = new GithubAuthProvider();
 
   const handleGoogleSignIn = async () => {
     try {
@@ -35,17 +38,41 @@ const Login = () => {
     }
   };
 
-  // const handleGithubSignIn = () => {
-  //   signInWithPopup(auth, githubProvider)
-  //     .then((result) => {
-  //       const loggedInUser = result.user;
-  //       console.log(loggedInUser);
-  //       setUser(loggedInUser);
-  //     })
-  //     .catch((error) => {
-  //       console.log("error", error.message);
-  //     });
-  // };
+  const handleGithubSignIn = () => {
+    signInWithPopup(auth, githubProvider)
+      .then((result) => {
+        const loggedInUser = result.user;
+        console.log(loggedInUser);
+        setUser(loggedInUser);
+      })
+      .catch((error) => {
+        console.log("error", error.message);
+      });
+  };
+
+  const doLogin = async (email, password) => {
+    // setLoading(true);
+    try {
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      const loggedInUser = result.user;
+      const token = await loggedInUser.getIdToken();
+      localStorage.setItem("token", token);
+      setUser(loggedInUser);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const handleEmailPasswordLogin = async (event) => {
+    event.preventDefault();
+
+    if (!email || !password) {
+      console.log("Please provide both email and password.");
+      return;
+    }
+
+    await doLogin(email, password);
+  };
 
   const handleSignOut = async () => {
     try {
@@ -60,7 +87,9 @@ const Login = () => {
         console.log(result);
         setUser(null);
       })
-      .catch((error) => {});
+      .catch((error) => {
+        console.log(error);
+      });
   };
 
   const fetchSecureData = async () => {
@@ -103,7 +132,22 @@ const Login = () => {
       ) : (
         <div>
           <button onClick={handleGoogleSignIn}>Google Login</button>
-          {/* <button onClick={handleGithubSignIn}>Github Login</button> */}
+          <button onClick={handleGithubSignIn}>Github Login</button>
+          <form onSubmit={handleEmailPasswordLogin}>
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+            />
+            <button type="submit">Email and Password Login</button>
+          </form>
         </div>
       )}
       {user && (
